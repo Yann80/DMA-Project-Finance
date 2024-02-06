@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\DMA API.props" />
+</Project>

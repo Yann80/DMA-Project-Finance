@@ -1,0 +1,65 @@
+﻿@page "/Authentication/Login"
+@layout LoginLayout
+@inject NavigationManager navigationManager
+@inject IdentityAuthenticationStateProvider authStateProvider
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+
+<PageTitle>Login</PageTitle>
+
+<h1 class="text-center">
+    Project Finance Application
+</h1>
+
+<div class="container mt-md-5">
+    <div class="row justify-content-md-center">
+        <div class="col-sm-6">
+            <div class="card">
+                <div class="card-header">
+                    <h1 class="h2 text-center">Login</h1>
+                </div>
+                <div class="card-body">
+                    <EditForm class="form-signin" OnValidSubmit="OnSubmit" Model="backOfficeUserDTO">
+                        <DataAnnotationsValidator />
+
+                        <div class="form-floating mb-3">
+                            <InputText id="inputUsername" class="form-control" @bind-Value="backOfficeUserDTO.Username" autofocus placeholder="Username" />
+                            <label for="inputUsername">User Name</label>
+                            <ValidationMessage For="@(() => backOfficeUserDTO.Username)" />
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <InputText type="password" id="inputPassword" class="form-control" placeholder="Password" @bind-Value="backOfficeUserDTO.Password" />
+                            <label for="inputPassword">Password</label>
+                            <ValidationMessage For="@(() => backOfficeUserDTO.Password)" />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+                        </div>
+
+                        <label class="text-danger">@error</label>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    BackOfficeUserDTO backOfficeUserDTO { get; set; } = new BackOfficeUserDTO();
+    string error { get; set; }
+
+    async Task OnSubmit()
+    {
+        error = null;
+        try
+        {
+            await authStateProvider.Login(backOfficeUserDTO);
+            navigationManager.NavigateTo("");
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

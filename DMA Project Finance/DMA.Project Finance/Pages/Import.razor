@@ -1,0 +1,34 @@
+﻿@page "/Import"
+@using Core.Entities;
+@using Core.Services.Interfaces;
+@inject IImportService ImportService
+@inject IToastService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Import</h3>
+
+<button class="btn btn-primary" @onclick="ImportProjectTask">Import from Asana</button>
+<br />
+
+@code {
+    string currentUserName;
+
+    override protected async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            currentUserName = user.Identity.Name;
+        }
+    }
+
+    private async Task ImportProjectTask()
+    {
+        var result = await ImportService.ImportProjectTask(currentUserName);
+
+        if (result)
+            NotificationService.ShowInfo("Import has been completed");
+    }
+}

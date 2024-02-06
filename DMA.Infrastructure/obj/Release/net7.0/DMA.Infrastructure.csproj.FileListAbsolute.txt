@@ -1,0 +1,17 @@
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\bin\Release\net7.0\DMA.Infrastructure.deps.json
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\bin\Release\net7.0\DMA.Infrastructure.runtimeconfig.json
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\bin\Release\net7.0\DMA.Infrastructure.dll
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\bin\Release\net7.0\DMA.Infrastructure.pdb
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\bin\Release\net7.0\DMA.Core.dll
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\bin\Release\net7.0\DMA.Core.pdb
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.AssemblyInfo.cs
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.csproj.CopyComplete
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.dll
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\refint\DMA.Infrastructure.dll
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.pdb
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\DMA.Infrastructure.genruntimeconfig.cache
+C:\Users\YannGourdin\source\repos\DMA.Infrastructure\obj\Release\net7.0\ref\DMA.Infrastructure.dll

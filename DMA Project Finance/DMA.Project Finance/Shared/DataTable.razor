@@ -1,0 +1,32 @@
+﻿@inject Microsoft.JSInterop.IJSRuntime JSRuntime;
+
+<div>
+    <table class="table table-striped" style="width:100%" @attributes=UserAttributes id="@id">
+        @ChildContent
+    </table>
+</div>
+
+@code
+{
+    [Parameter]
+    public bool Searchable { get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public string id { get; set; } = "DataTable-" + Guid.NewGuid().ToString();
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> UserAttributes { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        StateHasChanged();
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeAsync<string>("init_datatable", new object[] { $"#{id}", Searchable });
+    }
+}

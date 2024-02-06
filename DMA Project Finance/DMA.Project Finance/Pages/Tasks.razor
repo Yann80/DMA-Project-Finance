@@ -1,0 +1,251 @@
+﻿@page "/Tasks"
+@using Core.Entities;
+@using Core.Services.Interfaces;
+@inject ITaskItemService TaskService
+@inject IAsanaService AsanaService
+@inject IToastService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Tasks</h3>
+<div class="row">
+    <div class="col-md-4">
+        <select @bind="selectedProjectId" @bind:after="GetAllTasks">
+            <option value="0">Select a project</option>
+            @foreach (var project in listOfProjects)
+            {
+                <option value="@project.ProjectId">@project.ProjectName</option>
+            }
+        </select>
+    </div>
+</div>
+
+<br />
+@if (ListOfTasks != null && ListOfTasks.Any())
+{
+    <DataTable>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Amount charged</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var taskItem in ListOfTasks)
+            {
+                <tr>
+                    <td>@taskItem.TaskName</td>
+                    <td>
+                        @{
+                            var valueCharged = taskItem.ProjectTasks.Where(p => p.ProjectId == selectedProjectId).SingleOrDefault();
+                            if (valueCharged != null)
+                                @valueCharged.Billing
+                        }
+                    </td>
+                    @if (taskItem.Completed)
+                    {
+                        <td>Completed</td>
+                    }
+                    else
+                    {
+                        <td>Active</td>
+                    }
+                    <td>
+                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmation" @onclick="() => SetSelectedTaskItem(taskItem.TaskItemId)">Remove</button>
+                        <button class="btn btn-primary" @onclick="() => EditTask(taskItem.TaskItemId)">Edit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </DataTable>
+    <div class="modal fade" id="deleteConfirmation" tabindex="-1" aria-labelledby="deleteConfirmationLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="deleteConfirmationLabel">Confirmation</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Do you really want to delete the selected task
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" @onclick="() => RemoveTask(taskItemToDelete)">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>No tasks found.</p>
+}
+
+@if (showForm)
+{
+    <h4>@(editingTaskId == null ? "Create task" : "Edit task")</h4>
+    <EditForm Model="@currentTaskItem" OnValidSubmit="AddOrEditTaskItem">
+        <DataAnnotationsValidator />
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input class="form-control" id="name" @bind="currentTaskItem.TaskName" />
+            <ValidationMessage For="() => currentTaskItem.TaskName" />
+            <label for="name">Amount:</label>
+            <input class="form-control" type="number" step=".01" id="name" @bind="amountCharged" />
+        </div>
+        <br />
+        <button class="btn btn-success">Save</button>
+        <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+        <button class="btn btn-primary" style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Create task")</button>
+    </EditForm>
+}
+@if (showButton)
+{
+    <button class="btn btn-primary" style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Create task")</button>
+}
+
+@code {
+    bool showForm = false;
+    bool showButton = true;
+    decimal amountCharged = 0;
+    int? editingTaskId = null;
+    int taskItemToDelete;
+    int selectedProjectId = 0;
+    string currentUserName;
+
+    List<TaskItem> ListOfTasks;
+    List<Project> listOfProjects;
+    TaskItem currentTaskItem = new TaskItem();
+    TaskItem newTaskItem = new TaskItem();
+
+    override protected async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            currentUserName = user.Identity.Name;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        GetAllProjects();
+        GetAllTasks();
+    }
+
+    private void GetAllProjects()
+    {
+        System.Threading.Tasks.Task.Run(async () =>
+       {
+           listOfProjects = await AsanaService.GetAllProjectFromDb();
+
+       }).Wait();
+    }
+
+    private void GetAllTasks()
+    {
+        if (selectedProjectId == 0)
+            return;
+
+        var project = listOfProjects.Where(p => p.ProjectId == selectedProjectId).SingleOrDefault();
+
+        if (project != null)
+        {
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                ListOfTasks = await AsanaService.GetAllProjectTasksFromDb(project.ProjectId);
+
+            }).Wait();
+        }
+    }
+
+    void EditTask(int taskItemId)
+    {
+        editingTaskId = taskItemId;
+        Task.Run(async () =>
+       {
+           currentTaskItem = await TaskService.GetTaskItem(taskItemId);
+           var projectTask = currentTaskItem.ProjectTasks.Where(p => p.ProjectId == selectedProjectId).SingleOrDefault();
+           amountCharged = projectTask?.Billing ?? 0;
+
+       }).Wait();
+
+        showForm = true;
+        showButton = !showForm;
+    }
+
+    void AddOrEditTaskItem()
+    {
+        Task.Run(async () =>
+        {
+            if (!editingTaskId.HasValue)
+            {
+                newTaskItem = new TaskItem()
+                    {
+                        TaskName = currentTaskItem.TaskName,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = currentUserName,
+                        Completed = false,
+                        PermaLink = string.Empty,
+                        Notes = string.Empty,
+                        Gid = string.Empty
+                    };
+                ListOfTasks.Add(newTaskItem);
+                await TaskService.CreateTaskItem(newTaskItem, selectedProjectId, amountCharged);
+            }
+            else
+            {
+                var projectTask = currentTaskItem.ProjectTasks.Where(p => p.ProjectId == selectedProjectId).SingleOrDefault();
+                if (projectTask != null)
+                    projectTask.Billing = amountCharged;
+
+                if (amountCharged > 0)
+                    currentTaskItem.Completed = true;
+
+                await TaskService.UpdateTaskItem(currentTaskItem);
+                GetAllTasks();
+            }
+        }).Wait();
+        ToggleForm();
+    }
+
+    void ResetForm()
+    {
+        currentTaskItem = new TaskItem();
+        editingTaskId = null;
+    }
+
+    void ToggleForm()
+    {
+        showForm = !showForm;
+        showButton = !showForm;
+        if (!showForm)
+        {
+            ResetForm();
+        }
+    }
+
+    void Cancel()
+    {
+        ResetForm();
+        ToggleForm();
+    }
+
+    void RemoveTask(int taskItemId)
+    {
+        var taskItemToRemove = ListOfTasks.FirstOrDefault(p => p.TaskItemId == taskItemId);
+        if (taskItemToRemove != null)
+        {
+            ListOfTasks.Remove(taskItemToRemove);
+            TaskService.DeleteTaskItem(taskItemId);
+        }
+    }
+
+    void SetSelectedTaskItem(int taskItemId)
+    {
+        taskItemToDelete = taskItemId;
+    }
+}

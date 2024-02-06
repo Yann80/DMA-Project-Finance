@@ -1,0 +1,12 @@
+C:\Users\YannGourdin\source\repos\DMA Core\bin\Debug\net7.0\DMA.Core.deps.json
+C:\Users\YannGourdin\source\repos\DMA Core\bin\Debug\net7.0\DMA.Core.dll
+C:\Users\YannGourdin\source\repos\DMA Core\bin\Debug\net7.0\DMA.Core.pdb
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.csproj.AssemblyReference.cache
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.AssemblyInfoInputs.cache
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.AssemblyInfo.cs
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.csproj.CoreCompileInputs.cache
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.dll
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\refint\DMA.Core.dll
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\DMA.Core.pdb
+C:\Users\YannGourdin\source\repos\DMA Core\obj\Debug\net7.0\ref\DMA.Core.dll

@@ -1,0 +1,138 @@
+﻿@page "/Admin/Roles"
+@using Microsoft.AspNetCore.Identity;
+@attribute [Authorize(Roles = "Administrator")]
+@inject IUserManager UserManager
+
+<h3>List of Roles</h3>
+
+<!-- Display Roles -->
+@if (ListOfRoles != null && ListOfRoles.Any())
+{
+    <DataTable>
+        <thead>
+            <tr>
+                <th>Role Name</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var role in ListOfRoles)
+            {
+                <tr>
+                    <td>@role.Name</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => RemoveRole(role.Id)">Remove</button>
+                        <button class="btn btn-primary" @onclick="() => EditRole(role.Id)">Edit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </DataTable>
+}
+else
+{
+    <p>No roles found.</p>
+}
+
+<!-- Create or Update User -->
+@if (showForm)
+{
+    <h4>@(editingRoleId == null ? "Create Role" : "Edit Role")</h4>
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input class="form-control" id="name" @bind="CurrentRole.Name" />
+    </div>
+    <br />
+    <button class="btn btn-success" @onclick="AddOrEditRole">Save</button>
+    <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+}
+<button class="btn btn-primary" style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Create Role")</button>
+
+@code {
+    bool showForm = false;
+    string? editingRoleId = null;
+
+    List<IdentityRole> ListOfRoles;
+    IdentityRole CurrentRole = new IdentityRole();
+    IdentityRole NewRole = new IdentityRole();
+
+    protected override void OnInitialized()
+    {
+        InitTable();
+    }
+
+    void InitTable()
+    {
+        Task.Run((Func<Task>)(async () =>
+      {
+          this.ListOfRoles = await UserManager.GetRolesAsync();
+      })).Wait();
+    }
+
+    void EditRole(string roleId)
+    {
+        editingRoleId = roleId;
+        Task.Run(async () =>
+       {
+           CurrentRole = await UserManager.GetRoleAsync(roleId);
+
+       }).Wait();
+
+        showForm = true;
+    }
+
+    void AddOrEditRole()
+    {
+        Task.Run(async () =>
+        {
+            if (string.IsNullOrEmpty(editingRoleId))
+            {
+                NewRole = new IdentityRole(CurrentRole.Name);
+                ListOfRoles.Add(NewRole);
+                await UserManager.CreateRoleAsync(NewRole);
+            }
+            else
+            {
+                await UserManager.UpdateRoleAsync(CurrentRole);
+                InitTable();
+            }
+        }).Wait();
+        ToggleForm();
+    }
+
+    void ResetForm()
+    {
+        CurrentRole = new IdentityRole();
+        editingRoleId = null;
+    }
+
+    void ToggleForm()
+    {
+        showForm = !showForm;
+        if (!showForm)
+        {
+            ResetForm();
+        }
+    }
+
+    void Cancel()
+    {
+        ResetForm();
+        ToggleForm();
+    }
+
+    void RemoveRole(string roleId)
+    {
+        var roleToRemove = ListOfRoles.FirstOrDefault(u => u.Id == roleId);
+        if (roleToRemove != null)
+        {
+            ListOfRoles.Remove(roleToRemove);
+        }
+
+        Task.Run(async () =>
+        {
+            await UserManager.DeleteRoleAsync(roleId);
+
+        }).Wait();
+    }
+}

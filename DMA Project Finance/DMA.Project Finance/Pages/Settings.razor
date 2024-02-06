@@ -1,0 +1,84 @@
+﻿@page "/settings"
+@inject IUserManager UserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Change Password</h3>
+
+@if (successMessage != null)
+{
+    <div class="alert alert-success" role="alert">
+        @successMessage
+    </div>
+}
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+
+<div class="form-group">
+    <label for="currentPassword">Current Password</label>
+    <input type="password" class="form-control" id="currentPassword" @bind="currentPassword">
+</div>
+
+<div class="form-group">
+    <label for="newPassword">New Password</label>
+    <input type="password" class="form-control" id="newPassword" @bind="newPassword">
+</div>
+
+<div class="form-group">
+    <label for="confirmPassword">Confirm Password</label>
+    <input type="password" class="form-control" id="confirmPassword" @bind="confirmPassword">
+</div>
+<br />
+<button class="btn btn-primary" @onclick="ChangePassword">Change Password</button>
+
+@code {
+    private string currentPassword;
+    private string newPassword;
+    private string confirmPassword;
+    private string successMessage;
+    private string errorMessage;
+    private string currentUserName;
+
+    override protected async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            currentUserName = user.Identity.Name;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        try
+        {
+            // Add validation logic if needed
+            if (newPassword != confirmPassword)
+            {
+                errorMessage = "New password and confirm password do not match.";
+                return;
+            }
+            
+            // Call the UserService to handle the password change
+            await UserService.ChangePasswordAsync(currentUserName, currentPassword, newPassword);
+
+            // Reset the form and show success message
+            currentPassword = string.Empty;
+            newPassword = string.Empty;
+            confirmPassword = string.Empty;
+            successMessage = "Password changed successfully.";
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions and display error message
+            errorMessage = $"Error changing password: {ex.Message}";
+        }
+    }
+}

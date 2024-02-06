@@ -1,0 +1,199 @@
+﻿@page "/Projects"
+@using Core.Entities;
+@using Core.Services.Interfaces;
+@inject IProjectService ProjectService
+@inject IAsanaService AsanaService
+@inject IToastService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Projects</h3>
+
+@if (ListOfProjects != null && ListOfProjects.Any())
+{
+    <DataTable>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in ListOfProjects)
+            {
+                <tr>
+                    <td>@project.ProjectName</td>
+                    <td>
+                        <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmation" @onclick="() => SetSelectedProject(project.ProjectId)">Remove</button>
+                        <button class="btn btn-primary" @onclick="() => EditProject(project.ProjectId)">Edit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </DataTable>
+    <div class="modal fade" id="deleteConfirmation" tabindex="-1" aria-labelledby="deleteConfirmationLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="deleteConfirmationLabel">Confirmation</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Do you really want to delete the selected project - @CurrentProject.ProjectName
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger" @onclick="() => RemoveProject(projectIdToDelete)">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <p>No projects found.</p>
+}
+
+@if (showForm)
+{
+    <EditForm Model="@CurrentProject" OnValidSubmit="AddOrEditProject">
+        <DataAnnotationsValidator />
+        <h4>@(editingProjectId == null ? "Create project" : "Edit project")</h4>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input class="form-control" id="name" @bind="CurrentProject.ProjectName" />
+            <ValidationMessage For="() => CurrentProject.ProjectName" />
+        </div>
+        <br />
+        <button class="btn btn-success" type="submit">Save</button>
+        <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+        <button class="btn btn-primary" formnovalidate style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Create project")</button>
+    </EditForm>
+}
+
+@if (showButton)
+{
+    <button class="btn btn-primary" formnovalidate style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Create project")</button>
+}
+
+@code {
+    bool showForm = false;
+    bool showButton = true;
+    int? editingProjectId = null;
+    int projectIdToDelete;
+    string currentUserName;
+
+    List<Project> ListOfProjects;
+    Project CurrentProject = new Project();
+    Project NewProject = new Project();
+
+    override protected async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            currentUserName = user.Identity.Name;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        GetAllProjects();
+    }
+
+    private void GetAllProjects()
+    {
+        System.Threading.Tasks.Task.Run(async () =>
+       {
+           ListOfProjects = await AsanaService.GetAllProjectFromDb();
+
+       }).Wait();
+    }
+
+    void EditProject(int projectId)
+    {
+        editingProjectId = projectId;
+        Task.Run(async () =>
+       {
+           CurrentProject = await ProjectService.GetProject(projectId);
+
+       }).Wait();
+
+        showForm = true;
+    }
+
+    void AddOrEditProject()
+    {
+        Task.Run(async () =>
+        {
+            if (!editingProjectId.HasValue)
+            {
+                NewProject = new Project()
+                {
+                    ProjectName = CurrentProject.ProjectName,
+                    CreatedBy = currentUserName,
+                    CreatedOn = DateTime.Now,
+                    ResourceType = ResourceType.Project,
+                    Completed = false
+                };
+                ListOfProjects.Add(NewProject);
+                await ProjectService.CreateProject(NewProject);
+            }
+            else
+            {
+                await ProjectService.UpdateProject(CurrentProject);
+                GetAllProjects();
+            }
+        }).Wait();
+        ToggleForm();
+    }
+
+    void ResetForm()
+    {
+        CurrentProject = new Project();
+        editingProjectId = null;
+    }
+
+    void ToggleForm()
+    {
+        showForm = !showForm;
+        showButton = !showForm;
+
+        if (!showForm)
+        {
+            ResetForm();
+        }
+    }
+
+    void Cancel()
+    {
+        ResetForm();
+        ToggleForm();
+    }
+
+    void RemoveProject(int projectId)
+    {
+        var projectToRemove = ListOfProjects.FirstOrDefault(p => p.ProjectId == projectId);
+        if (projectToRemove != null)
+        {
+            if(projectToRemove.ProjectTasks.Count() > 0)
+            {
+                NotificationService.ShowError($"Can't delete project - {projectToRemove.ProjectName} because it contains tasks!");
+                return;
+            }
+            ListOfProjects.Remove(projectToRemove);
+            ProjectService.DeleteProject(projectId);
+        }
+    }
+
+    void SetSelectedProject(int projectId)
+    {
+        projectIdToDelete = projectId;
+        Task.Run(async () =>
+       {
+           CurrentProject = await ProjectService.GetProject(projectId);
+
+       }).Wait();
+    }
+}

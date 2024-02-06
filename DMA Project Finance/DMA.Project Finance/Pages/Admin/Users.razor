@@ -1,0 +1,175 @@
+﻿@page "/Admin/Users"
+@using Microsoft.AspNetCore.Identity;
+@attribute [Authorize(Roles = "Administrator")]
+@inject IUserManager UserManager
+
+<h3>List of users</h3>
+
+<!-- Display Users -->
+@if (ListOfUsers != null && ListOfUsers.Any())
+{
+    <DataTable>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in ListOfUsers)
+            {
+                <tr>
+                    <td>@user.Username</td>
+                    <td>@user.Email</td>
+                    <td>@user.Role</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => RemoveUser(user.Id)">Remove</button>
+                        <button class="btn btn-primary" @onclick="() => EditUser(user.Id)">Edit</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </DataTable>
+}
+else
+{
+    <p>No users found.</p>
+}
+
+<!-- Create or Update User -->
+@if (showForm)
+{
+    <EditForm Model="@CurrentUser" OnValidSubmit="AddOrUpdateUser">
+        <DataAnnotationsValidator />
+    <h4>@(editingUserId == null ? "Create User" : "Edit User")</h4>
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input class="form-control" id="name" @bind="CurrentUser.Username" />
+    </div>
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input class="form-control" type="email" id="email" @bind="CurrentUser.Email" />
+    </div>
+    <div class="form-group">
+        <label for="email">Password:</label>
+        <input class="form-control" type="password" id="email" @bind="CurrentUser.Password" />
+    </div>
+    <div class="form-group">
+        <label for="role">Role:</label>
+        <select id="dropdownList" @bind="CurrentUser.Role" class="form-select">
+            <option value="">-- Select --</option>
+            @foreach (var option in ListOfRoles)
+            {
+                <option value="@option.Name">@option.Name</option>
+            }
+        </select>
+    </div><br />
+        <button class="btn btn-success">Save</button>
+        <button class="btn btn-danger" @onclick="Cancel">Cancel</button>
+        <button class="btn btn-primary" style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Add User")</button>
+    </EditForm>
+}
+@if (showButton)
+{
+    <button class="btn btn-primary" style="margin-left:5px" @onclick="ToggleForm">@(showForm ? "Hide Form" : "Add User")</button>
+}
+
+
+@code {
+    bool showForm = false;
+    bool showButton = true;
+    string? editingUserId = null;
+
+    List<BackOfficeUserDTO> ListOfUsers;
+    List<IdentityRole> ListOfRoles;
+    BackOfficeUserDTO CurrentUser = new BackOfficeUserDTO();
+    BackOfficeUserDTO NewUser = new BackOfficeUserDTO();
+
+    protected override void OnInitialized()
+    {
+        Task.Run(async () =>
+        {
+            ListOfRoles = await UserManager.GetRolesAsync();
+
+        }).Wait(); 
+        GetUsers();
+    }
+
+    void GetUsers()
+    {
+        Task.Run(async () =>
+       {
+           ListOfUsers = await UserManager.GetUsersAsync();
+       }).Wait();
+    }
+
+    void EditUser(string userId)
+    {
+        editingUserId = userId;
+        Task.Run(async () =>
+       {
+           CurrentUser = await UserManager.GetUserAsync(userId);
+
+       }).Wait();
+
+        showForm = true;
+        showButton = !showForm;
+    }
+
+    void AddOrUpdateUser()
+    {
+        Task.Run(async () =>
+        {
+            if (string.IsNullOrEmpty(editingUserId))
+            {
+                NewUser = new BackOfficeUserDTO();
+                NewUser.Id = string.Empty;
+                NewUser.Username = CurrentUser.Username;
+                NewUser.Role = CurrentUser.Role;
+                NewUser.Email = CurrentUser.Email;
+                NewUser.Password = CurrentUser.Password;
+                ListOfUsers.Add(NewUser);
+                await UserManager.CreateUserAsync(NewUser);
+            }
+            else
+            {
+                await UserManager.UpdateUserAsync(CurrentUser);
+                GetUsers();
+            }
+        }).Wait();
+        ToggleForm();
+    }
+
+    void ResetForm()
+    {
+        CurrentUser = new BackOfficeUserDTO();
+        editingUserId = null;
+    }
+
+    void ToggleForm()
+    {
+        showForm = !showForm;
+        showButton = !showForm;
+        if (!showForm)
+        {
+            ResetForm();
+        }
+    }
+
+    void Cancel()
+    {
+        ResetForm();
+        ToggleForm();
+    }
+
+    void RemoveUser(string userId)
+    {
+        var userToRemove = ListOfUsers.FirstOrDefault(u => u.Id == userId);
+        if (userToRemove != null)
+        {
+            ListOfUsers.Remove(userToRemove);
+        }
+    }
+}
